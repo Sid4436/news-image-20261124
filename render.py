@@ -2,6 +2,8 @@
 """Render entry.png for make.fun news-image-20261124: the world's news of Tuesday 24 November 2026.
 
 Drawn with Pillow primitives only (no downloaded art). Rendered at 2x and downsampled for clean edges.
+Six stories in a 3 x 2 front page: the four Asia-Pacific items from the morning entry plus
+two verified later in the day — US bird flu (WHO/Reuters) and the UK's record heat deaths (UKHSA/Reuters).
 Run: python3 render.py  -> writes entry.png beside this file (deterministic, no timestamps).
 """
 from pathlib import Path
@@ -123,11 +125,57 @@ def art_quake(d, x, y, w, h):
     d.text(P(x + 12, y + h - 26), "M5.3", font=F_TAG, fill=RED)
 
 
+def art_birdflu(d, x, y, w, h):
+    """US bird flu: a bird over a farm sky, with H5N1 virus dots."""
+    d.rectangle(P(x, y, x + w, y + h), fill=(232, 240, 245))
+    cx, cy = x + w * 0.44, y + h * 0.56
+    d.ellipse(P(cx - 56, cy - 20, cx + 44, cy + 28), fill=INK)
+    d.ellipse(P(cx + 36, cy - 40, cx + 76, cy - 2), fill=INK)
+    d.polygon(P(cx + 72, cy - 30, cx + 98, cy - 20, cx + 72, cy - 12), fill=GOLD)
+    d.ellipse(P(cx + 58, cy - 30, cx + 66, cy - 22), fill=PAPER)
+    d.polygon(P(cx - 42, cy - 8, cx + 6, cy - 16, cx + 28, cy + 14, cx - 22, cy + 16), fill=(64, 70, 84))
+    d.line(P(cx - 52, cy + 12, cx - 78, cy + 2), fill=INK, width=4 * S)
+    d.line(P(cx - 50, cy + 20, cx - 74, cy + 16), fill=INK, width=4 * S)
+    d.line(P(cx - 8, cy + 26, cx - 8, cy + 44), fill=INK, width=3 * S)
+    d.line(P(cx + 10, cy + 26, cx + 10, cy + 44), fill=INK, width=3 * S)
+    for vx, vy in [(x + 34, y + 34), (x + w - 40, y + 30), (x + w - 52, y + h - 34)]:
+        for k in range(8):
+            import math
+            a = k * math.pi / 4
+            d.line(P(vx + 8 * math.cos(a), vy + 8 * math.sin(a),
+                     vx + 14 * math.cos(a), vy + 14 * math.sin(a)), fill=RED, width=2 * S)
+        d.ellipse(P(vx - 8, vy - 8, vx + 8, vy + 8), fill=RED)
+    d.text(P(x + 12, y + 10), "H5N1", font=F_TAG, fill=RED)
+
+
+def art_heat(d, x, y, w, h):
+    """UK record heat deaths: a blazing sun and a thermometer."""
+    d.rectangle(P(x, y, x + w, y + h), fill=(245, 236, 220))
+    cx, cy, r = x + w * 0.36, y + h * 0.50, 40
+    import math
+    for k in range(8):
+        a = k * math.pi / 4
+        d.line(P(cx + (r + 8) * math.cos(a), cy + (r + 8) * math.sin(a),
+                 cx + (r + 24) * math.cos(a), cy + (r + 24) * math.sin(a)), fill=GOLD, width=5 * S)
+    d.ellipse(P(cx - r, cy - r, cx + r, cy + r), fill=GOLD)
+    d.ellipse(P(cx - r + 12, cy - r + 12, cx + r - 12, cy + r - 12), fill=(232, 120, 40))
+    tx = x + w * 0.70
+    d.rounded_rectangle(P(tx, y + 18, tx + 26, y + h - 44), radius=13 * S, fill=PAPER, outline=INK, width=2 * S)
+    d.ellipse(P(tx - 8, y + h - 56, tx + 34, y + h - 22), fill=RED)
+    d.rectangle(P(tx + 8, y + 52, tx + 18, y + h - 40), fill=RED)
+    d.line(P(tx - 6, y + 52, tx + 32, y + 52), fill=INK, width=2 * S)
+    d.text(P(x + 12, y + 10), "41 DAYS", font=F_TAG, fill=RED)
+
+
 # ---------------------------------------------------------------- the day's stories
 # Each was first reported on Tuesday 24 November 2026 and checked in at least two outlets.
 STORIES = [
     ("ASIA · MARKETS", "Asian stocks surge as AI trade revives",
      "Kospi, Nikkei and Taiex leap; Seoul triggers a buy-side trading sidecar", art_markets),
+    ("USA · HEALTH", "Bird flu kills one in Washington",
+     "Three H5N1 cases in Yakima dairy workers; one died 1 Nov, no human spread seen", art_birdflu),
+    ("UK · CLIMATE", "UK heat deaths hit a record 5,258",
+     "Highest since records began in 2016; seven heatwaves over 41 days", art_heat),
     ("SINGAPORE · TECH", "Singapore keeps probing Megaspeed",
      "PM Wong, in Canberra: city-state won't be a conduit to dodge US chip curbs", art_chips),
     ("AUSTRALIA · TECH", "Tech giants face fines of up to 5% of global revenue",
@@ -150,13 +198,13 @@ def render(path):
     d.text(P((W - dw) / 2, 94), date, font=F_DATE, fill=RED)
     d.line(P(36, 132, W - 36, 132), fill=INK, width=3 * S)
     d.line(P(36, 137, W - 36, 137), fill=INK, width=1 * S)
-    # 2 x 2 grid of stories
-    gx, gy, gap = 36, 156, 24
-    cw = (W - 2 * gx - gap) / 2
+    # 3 x 2 grid of stories
+    gx, gy, gapx, gapy = 36, 156, 26, 24
+    cw = 300
     ch = 388
     for i, (tag, head, sub, art) in enumerate(STORIES):
-        cx = gx + (i % 2) * (cw + gap)
-        cy = gy + (i // 2) * (ch + gap)
+        cx = gx + (i % 3) * (cw + gapx)
+        cy = gy + (i // 3) * (ch + gapy)
         art(d, cx, cy, cw, 170)
         d.text(P(cx, cy + 184), tag, font=F_TAG, fill=RED)
         ty = cy + 206
@@ -167,8 +215,9 @@ def render(path):
         for line in wrap(d, sub, F_SUB, cw):
             d.text(P(cx, ty), line, font=F_SUB, fill=MUTED)
             ty += 24
-    d.line(P(W / 2, gy, W / 2, gy + 2 * ch + gap), fill=RULE, width=1 * S)
-    d.line(P(gx, gy + ch + gap / 2, W - gx, gy + ch + gap / 2), fill=RULE, width=1 * S)
+    d.line(P(gx + cw + gapx / 2, gy, gx + cw + gapx / 2, gy + 2 * ch + gapy), fill=RULE, width=1 * S)
+    d.line(P(gx + 2 * cw + 3 * gapx / 2, gy, gx + 2 * cw + 3 * gapx / 2, gy + 2 * ch + gapy), fill=RULE, width=1 * S)
+    d.line(P(gx, gy + ch + gapy / 2, W - gx, gy + ch + gapy / 2), fill=RULE, width=1 * S)
     # footer
     d.line(P(36, H - 46, W - 36, H - 46), fill=INK, width=2 * S)
     foot = "Events first reported on Tuesday 24 November 2026 · each checked in two or more news reports"
